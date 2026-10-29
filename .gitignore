@@ -1,0 +1,30 @@
+# Node / React Native
+node_modules/
+frontend/node_modules/
+.npm/
+npm-debug.log
+yarn-error.log
+
+# Android build artifacts
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+*.apk
+*.aab
+
+# .NET / C#
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+
+# SQLite Databases (created automatically at runtime)
+*.db
+*.db-shm
+*.db-wal
+**/kidzen.db
+
+# Temp test files & screenshots
+*.png
+test_sqlite.ps1
+serve_apk.js

@@ -1,0 +1,6 @@
+@KidZen.API_HostAddress = http://localhost:5117
+
+GET {{KidZen.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
