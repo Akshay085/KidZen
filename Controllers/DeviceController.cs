@@ -104,21 +104,44 @@ public class DeviceController : ControllerBase
     [HttpGet("{deviceId}/rules")]
     public async Task<IActionResult> GetDeviceRules(int deviceId)
     {
+        var device = await _db.Devices.FindAsync(deviceId);
         var now = DateTime.UtcNow;
+
+        var targetDeviceIds = new List<int> { deviceId };
+        if (device != null)
+        {
+            var peerIds = await _db.Devices
+                .Where(d => d.ChildId == device.ChildId)
+                .Select(d => d.DeviceId)
+                .ToListAsync();
+            targetDeviceIds = peerIds;
+        }
+
         var activeUnlocks = await _db.TemporaryUnlocks
-            .Where(u => u.DeviceId == deviceId && u.EndTime > now)
-            .ToDictionaryAsync(u => u.PackageName, u => u.EndTime);
+            .Where(u => targetDeviceIds.Contains(u.DeviceId) && u.EndTime > now)
+            .OrderByDescending(u => u.EndTime)
+            .ToListAsync();
+        var unlockDict = activeUnlocks
+            .GroupBy(u => u.PackageName)
+            .ToDictionary(g => g.Key, g => g.First().EndTime);
 
         var rulesList = await _db.AppRules
-            .Where(r => r.DeviceId == deviceId && r.IsEnabled)
+            .Where(r => targetDeviceIds.Contains(r.DeviceId) && r.IsEnabled)
+            .OrderByDescending(r => r.UpdatedAt)
             .ToListAsync();
 
-        var rules = rulesList.Select(r => new DeviceRuleSyncDto(
-            r.PackageName,
-            r.IsLocked,
-            r.DailyLimitMinutes,
-            activeUnlocks.TryGetValue(r.PackageName, out var endTime) ? endTime : null
-        )).ToList();
+        var rules = rulesList
+            .GroupBy(r => r.PackageName)
+            .Select(g =>
+            {
+                var topRule = g.First();
+                return new DeviceRuleSyncDto(
+                    topRule.PackageName,
+                    topRule.IsLocked,
+                    topRule.DailyLimitMinutes,
+                    unlockDict.TryGetValue(topRule.PackageName, out var endTime) ? endTime : null
+                );
+            }).ToList();
 
         return Ok(rules);
     }

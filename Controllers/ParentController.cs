@@ -81,6 +81,7 @@ public class ParentController : ControllerBase
                 Email = pc.Child.Email,
                 Devices = _db.Devices
                     .Where(d => d.ChildId == pc.Child.UserId)
+                    .OrderByDescending(d => d.LastSeen)
                     .Select(d => new DeviceSummaryDto(
                         d.DeviceId,
                         d.DeviceIdentifier,
