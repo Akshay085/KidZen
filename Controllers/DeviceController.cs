@@ -104,14 +104,21 @@ public class DeviceController : ControllerBase
     [HttpGet("{deviceId}/rules")]
     public async Task<IActionResult> GetDeviceRules(int deviceId)
     {
-        var rules = await _db.AppRules
+        var now = DateTime.UtcNow;
+        var activeUnlocks = await _db.TemporaryUnlocks
+            .Where(u => u.DeviceId == deviceId && u.EndTime > now)
+            .ToDictionaryAsync(u => u.PackageName, u => u.EndTime);
+
+        var rulesList = await _db.AppRules
             .Where(r => r.DeviceId == deviceId && r.IsEnabled)
-            .Select(r => new DeviceRuleSyncDto(
-                r.PackageName,
-                r.IsLocked,
-                r.DailyLimitMinutes
-            ))
             .ToListAsync();
+
+        var rules = rulesList.Select(r => new DeviceRuleSyncDto(
+            r.PackageName,
+            r.IsLocked,
+            r.DailyLimitMinutes,
+            activeUnlocks.TryGetValue(r.PackageName, out var endTime) ? endTime : null
+        )).ToList();
 
         return Ok(rules);
     }

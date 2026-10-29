@@ -38,4 +38,4 @@ public record SyncUsageDto(int DeviceId, List<ReportUsageItemDto> Usages);
 public record UsageStatDto(string PackageName, string AppName, int DurationMinutes, DateTime Date);
 
 // Realtime SignalR Command DTO
-public record DeviceRuleSyncDto(string PackageName, bool IsLocked, int DailyLimitMinutes);
+public record DeviceRuleSyncDto(string PackageName, bool IsLocked, int DailyLimitMinutes, DateTime? TemporaryUnlockUntil = null);
